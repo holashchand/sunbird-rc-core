@@ -40,7 +40,7 @@ public class ElasticSearchService implements ISearchService {
     @Autowired
     private APIMessage apiMessage;
 
-    @Autowired
+    @Autowired(required = false)
     private IAuditService auditService;
 
     @Value("${search.offset}")
@@ -91,8 +91,10 @@ public class ElasticSearchService implements ISearchService {
         }
 
         try {
-            auditService.auditElasticSearch( new AuditRecord().setUserId(apiMessage.getUserID()),
-                    searchQuery.getEntityTypes(), inputQueryNode);
+            if(auditEnabled) {
+                auditService.auditElasticSearch( new AuditRecord().setUserId(apiMessage.getUserID()),
+                        searchQuery.getEntityTypes(), inputQueryNode);
+            }
         } catch (Exception e) {
             logger.error("Exception while auditing: {}", ExceptionUtils.getStackTrace(e));
         }

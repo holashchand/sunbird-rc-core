@@ -1,8 +1,18 @@
 version: '2.4'
 
+volumes:
+  es-data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/home/beehyv/Desktop/Projects/sunbird-rc/sunbird-rc-core/db-data-es'
+
 services:
   es:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.13
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
     environment:
       - discovery.type=single-node
       - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
@@ -141,14 +151,14 @@ services:
       - connectionInfo_uri=jdbc:postgresql://db:5432/registry
       - connectionInfo_username=postgres
       - connectionInfo_password=postgres
-      - sunbirdrc_url=http://registry:8081
+      - sunbirdrc_url=http://localhost:8081
     ports:
       - '8082:8082'
     depends_on:
       db:
         condition: service_started
-      registry:
-        condition: service_started
+#      registry:
+#        condition: service_started
     healthcheck:
       test:
         [

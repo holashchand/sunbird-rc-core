@@ -61,7 +61,7 @@ public class RuleEngineService {
         for (JsonNode patchNode : patchNodes) {
             String updatedPath = patchNode.get(PATH).textValue();
             for (OSSystemFields value : OSSystemFields.values()) {
-                if (updatedPath.contains(value.toString())) {
+                if (!value.name().startsWith("_") && updatedPath.contains(value.toString())) {
                     String path = getPathToUpdate(updatedPath, value);
                     JSONUtil.replaceFieldByPointerPath(metadataNode, path, existing.at(path));
                 }

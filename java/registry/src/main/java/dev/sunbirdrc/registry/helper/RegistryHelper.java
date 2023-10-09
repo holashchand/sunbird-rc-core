@@ -70,6 +70,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static dev.sunbirdrc.pojos.attestation.Action.GRANT_CLAIM;
 import static dev.sunbirdrc.registry.Constants.*;
@@ -185,6 +186,9 @@ public class RegistryHelper {
 
     @Autowired
     private AsyncRequest asyncRequest;
+
+    @Autowired
+    private OSSystemFieldsHelper systemFieldsHelper;
 
     public JsonNode removeFormatAttr(JsonNode requestBody) {
         String documents = "documents";
@@ -417,7 +421,7 @@ public class RegistryHelper {
     }
 
     public String triggerAttestation(AttestationRequest attestationRequest, AttestationPolicy attestationPolicy) throws Exception {
-        addAttestationProperty(attestationRequest);
+        addAttestationProperty(attestationRequest, attestationPolicy);
         //TODO: remove reading the entity after update
         String attestationOSID = getAttestationOSID(attestationRequest);
 
@@ -469,18 +473,35 @@ public class RegistryHelper {
                 false, null, false)
                 .get(attestationRequest.getEntityName())
                 .get(attestationRequest.getName());
-        List<String> fieldsToRemove = getFieldsToRemove(attestationRequest.getEntityName());
-        return JSONUtil.getOSIDFromArrNode(resultNode, JSONUtil.convertObjectJsonNode(attestationRequest), fieldsToRemove);
+        final AtomicReference<String> osid = new AtomicReference<>();
+        final AtomicReference<Integer> order = new AtomicReference<>(0);
+        resultNode.elements()
+                .forEachRemaining(d -> {
+                    if(d.get("order") != null && order.get() < d.get("order").asInt()) {
+                        osid.set(d.get("osid").asText());
+                        order.set(d.get("order").asInt());
+                    }
+                });
+        return osid.get();
+//        List<String> fieldsToRemove = getFieldsToRemove(attestationRequest.getEntityName());
+//        return JSONUtil.getOSIDFromArrNode(resultNode, JSONUtil.convertObjectJsonNode(attestationRequest), fieldsToRemove);
     }
 
-    private void addAttestationProperty(AttestationRequest attestationRequest) throws Exception {
+    private void addAttestationProperty(AttestationRequest attestationRequest, AttestationPolicy attestationPolicy) throws Exception {
         JsonNode existingEntityNode = readEntity(attestationRequest.getUserId(), attestationRequest.getEntityName(),
                 attestationRequest.getEntityId(), false, null, false);
         JsonNode nodeToUpdate = existingEntityNode.deepCopy();
         JsonNode parentNode = nodeToUpdate.get(attestationRequest.getEntityName());
         JsonNode propertyNode = parentNode.get(attestationRequest.getName());
+        updateAttestation(attestationPolicy.getAttestorEntity(), attestationRequest.getUserId(), parentNode, (ArrayNode) propertyNode, null);
         ObjectNode attestationJsonNode = (ObjectNode) JSONUtil.convertObjectJsonNode(attestationRequest);
+        int order = 1;
+        if (propertyNode != null && !propertyNode.isMissingNode()) {
+            order = propertyNode.size() + 1;
+        }
+        attestationJsonNode.set("order", JsonNodeFactory.instance.numberNode(order));
         attestationJsonNode.set("propertyData", JsonNodeFactory.instance.textNode(attestationRequest.getPropertyData().toString()));
+        systemFieldsHelper.ensureCreateAuditFields(attestationRequest.getEntityName(), attestationJsonNode, attestationRequest.getUserId());
         createOrUpdateProperty(attestationRequest.getEntityName(), attestationJsonNode, nodeToUpdate, attestationRequest.getName(), (ObjectNode) parentNode, propertyNode);
         updateEntityAndState(existingEntityNode, nodeToUpdate, attestationRequest.getUserId());
     }
@@ -1003,31 +1024,21 @@ public class RegistryHelper {
         return propertyURI.split("/")[0];
     }
     private void updateAttestation(String attestorEntity, String userId, JsonNode entity, ArrayNode attestations,String propertyToUpdate) throws Exception {
+        if (attestations == null) return;
         for (JsonNode attestation : attestations) {
             if (attestation.get(_osState.name()).asText().equals(States.PUBLISHED.name())
               && !attestation.get("name").asText().equals(propertyToUpdate)
             ){
-                ObjectNode propertiesOSID = attestation.get("propertiesOSID").deepCopy();
-                JSONUtil.removeNode(propertiesOSID, uuidPropertyName);
+                if(attestation.has("propertiesOSID")) {
+                    ObjectNode propertiesOSID = attestation.get("propertiesOSID").deepCopy();
+                    JSONUtil.removeNode(propertiesOSID, uuidPropertyName);
+                }
                 ((ObjectNode) attestation).set(_osState.name(), JsonNodeFactory.instance.textNode(States.INVALID.name()));
             } else if (attestation.get(_osState.name()).asText().equals(States.ATTESTATION_REQUESTED.name())) {
-                AttestationPolicy attestationPolicy = getAttestationPolicy(attestation.get("entityName").asText(), attestation.get("name").asText());
                 ObjectNode propertiesOSID = attestation.get("propertiesOSID").deepCopy();
-                Map<String, List<String>> propertiesOSIDMapper = new HashMap<>();
-                ObjectReader reader = objectMapper.readerFor(new TypeReference<List<String>>() {
-                });
-                for (Iterator<Map.Entry<String, JsonNode>> it = propertiesOSID.fields(); it.hasNext(); ) {
-                    Map.Entry<String, JsonNode> itr = it.next();
-                    if(itr.getValue().isArray() && !itr.getValue().isEmpty() && itr.getValue().get(0).isTextual()) {
-                        List<String> list = reader.readValue(itr.getValue());
-                        propertiesOSIDMapper.put(itr.getKey(), list);
-                    }
-                }
-                JsonNode propertyData = JSONUtil.extractPropertyDataFromEntity(entity, attestationPolicy.getAttestationProperties(), propertiesOSIDMapper);
-                if(!propertyData.equals(JSONUtil.convertStringJsonNode(attestation.get("propertyData").asText()))) {
-                    ((ObjectNode) attestation).set(_osState.name(), JsonNodeFactory.instance.textNode(States.DRAFT.name()));
-                    invalidateClaim(attestorEntity, userId, attestation.get(_osClaimId.name()).asText());
-                }
+                JSONUtil.removeNode(propertiesOSID, uuidPropertyName);
+                ((ObjectNode) attestation).set(_osState.name(), JsonNodeFactory.instance.textNode(States.DRAFT.name()));
+                invalidateClaim(attestorEntity, userId, attestation.get(_osClaimId.name()).asText());
             }
         }
     }

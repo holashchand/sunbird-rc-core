@@ -274,7 +274,7 @@ public class EntityParenter {
                     indexHelper.updateDefinitionIndex(shardId, definition.getTitle(), true);
                 }
             } catch (Exception e) {
-                logger.error("Failed Transaction creating index {}: {}", definition.getTitle(), ExceptionUtils.getStackTrace(e));
+                logger.error("Failed Transaction creating index {}: {}", definition.getTitle());
             }
 
         } else {
