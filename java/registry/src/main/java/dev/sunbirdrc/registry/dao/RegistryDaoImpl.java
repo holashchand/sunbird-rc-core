@@ -143,4 +143,12 @@ public class RegistryDaoImpl implements IRegistryDao {
             logger.error("Can't mark delete - Null vertex passed");
         }
     }
+    @Override
+    public void hardDeleteEntity(Vertex vertex) {
+        if (null != vertex) {
+            vertex.remove();
+        } else {
+            logger.error("Can't delete - Null vertex passed");
+        }
+    }
 }

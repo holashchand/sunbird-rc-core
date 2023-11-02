@@ -167,14 +167,20 @@ public class RegistryEntityController extends AbstractController {
             String tag = "RegistryController.delete " + entityName;
             watch.start(tag);
             Vertex deletedEntity = registryHelper.deleteEntity(entityName, entityId, userId);
+            JsonNode jsonNode = registryHelper.readEntity(userId, entityName, entityId, false, null, false);
+            if (jsonNode != null && jsonNode.has(entityName) && jsonNode.get(entityName).has(OSSystemFields._osSignedData.name())) {
+                String signedData = jsonNode.get(entityName).get(OSSystemFields._osSignedData.name()).asText();
+                registryHelper.revokeExistingCredentials(entityName, entityId, userId, signedData);
+            }
+            Vertex deletedEntity = registryHelper.deleteEntity(entityName, entityId, userId);
             if (deletedEntity != null && deletedEntity.keys().contains(OSSystemFields._osSignedData.name())) {
-                registryHelper.revokeExistingCredentials(entityName, entityId, userId, deletedEntity.value(OSSystemFields._osSignedData.name()));
+                deletedEntity.property(OSSystemFields._osSignedData.name()).toString();
+
             }
             responseParams.setErrmsg("");
             responseParams.setStatus(Response.Status.SUCCESSFUL);
             watch.stop(tag);
             return new ResponseEntity<>(response, HttpStatus.OK);
-
         } catch (RecordNotFoundException e) {
             createSchemaNotFoundResponse(e.getMessage(), responseParams);
             response = new Response(Response.API_ID.DELETE, "ERROR", responseParams);
@@ -200,7 +206,8 @@ public class RegistryEntityController extends AbstractController {
             entity.add(entityName);
             searchNode.set(ENTITY_TYPE, entity);
             checkEntityNameInDefinitionManager(entityName);
-            if (definitionsManager.getDefinition(entityName).getOsSchemaConfiguration().getEnableSearch()) {
+            if (definitionsManager.getDefinition(entityName).getOsSchemaConfiguration().getEnableSearch())
+            {
                 JsonNode result = registryHelper.searchEntity(searchNode);
                 watch.stop("RegistryController.searchEntity");
                 return new ResponseEntity<>(result.get(entityName), HttpStatus.OK);
@@ -445,6 +452,9 @@ public class RegistryEntityController extends AbstractController {
                 break;
             }
         }
+        if (attestationNode.get(OSSystemFields._osAttestedData.name()) == null)
+            throw new AttestationNotFoundException();
+        attestationNode = objectMapper.readTree(attestationNode.get(OSSystemFields._osAttestedData.name()).asText());
         return attestationNode;
     }
 

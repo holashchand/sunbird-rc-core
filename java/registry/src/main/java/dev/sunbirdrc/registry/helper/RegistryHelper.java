@@ -1040,18 +1040,6 @@ public class RegistryHelper {
         RecordIdentifier recordId = RecordIdentifier.parse(entityId);
         String shardId = dbConnectionInfoMgr.getShardId(recordId.getShardLabel());
         Shard shard = shardManager.activateShard(shardId);
-        ReadConfigurator configurator = ReadConfiguratorFactory.getOne(false);
-        Vertex vertex = registryService.deleteEntityById(shard, entityName, userId, recordId.getUuid());
-        VertexReader vertexReader = new VertexReader(shard.getDatabaseProvider(), vertex.graph(), configurator, uuidPropertyName, definitionsManager);
-        JsonNode deletedNode = JsonNodeFactory.instance.objectNode().set(entityName, vertexReader.constructObject(vertex));
-        if(notificationEnabled) notificationHelper.sendNotification(deletedNode, DELETE);
-        return vertex;
-    }
-
-    public JsonNode revokeAnEntity (String entityName, String entityId, String userId, JsonNode currentJsonNode) throws Exception {
-        RecordIdentifier recordId = RecordIdentifier.parse(entityId);
-        String shardId = dbConnectionInfoMgr.getShardId(recordId.getShardLabel());
-        Shard shard = shardManager.activateShard(shardId);
         ((ObjectNode) currentJsonNode).put(OSSystemFields._osSignedData.name(), "");
         ObjectNode newRootNode = objectMapper.createObjectNode();
         newRootNode.set(entityName, JSONUtil.convertObjectJsonNode(currentJsonNode));
