@@ -172,6 +172,9 @@ public class RegistryHelper {
     @Value("${view_template.decrypt_private_fields:false}")
     private boolean viewTemplateDecryptPrivateFields;
 
+    @Value("${registry.hard_delete_enabled}")
+    private boolean isHardDeleteEnabled;
+
     @Autowired
     private EntityTypeHandler entityTypeHandler;
 
@@ -431,7 +434,7 @@ public class RegistryHelper {
         updateGetFileUrl(attestationRequest.getAdditionalInput());
 
         PluginRequestMessage message = PluginRequestMessageCreator.create(
-                attestationRequest.getPropertyData().toString(), condition, attestationOSID, attestationRequest.getEntityName(),
+                String.valueOf(attestationRequest.getPropertyData()), condition, attestationOSID, attestationRequest.getEntityName(),
                 attestationRequest.getEmailId(), attestationRequest.getEntityId(), attestationRequest.getAdditionalInput(),
                 Action.RAISE_CLAIM.name(), attestationPolicy.getName(), attestationPolicy.getAttestorPlugin(),
                 attestationPolicy.getAttestorEntity(), attestationPolicy.getAttestorSignin(),
@@ -480,7 +483,9 @@ public class RegistryHelper {
         JsonNode parentNode = nodeToUpdate.get(attestationRequest.getEntityName());
         JsonNode propertyNode = parentNode.get(attestationRequest.getName());
         ObjectNode attestationJsonNode = (ObjectNode) JSONUtil.convertObjectJsonNode(attestationRequest);
-        attestationJsonNode.set("propertyData", JsonNodeFactory.instance.textNode(attestationRequest.getPropertyData().toString()));
+        if (attestationRequest.getPropertyData() != null) {
+            attestationJsonNode.set("propertyData", JsonNodeFactory.instance.textNode(attestationRequest.getPropertyData().toString()));
+        }
         createOrUpdateProperty(attestationRequest.getEntityName(), attestationJsonNode, nodeToUpdate, attestationRequest.getName(), (ObjectNode) parentNode, propertyNode);
         updateEntityAndState(existingEntityNode, nodeToUpdate, attestationRequest.getUserId());
     }
@@ -1041,9 +1046,15 @@ public class RegistryHelper {
         String shardId = dbConnectionInfoMgr.getShardId(recordId.getShardLabel());
         Shard shard = shardManager.activateShard(shardId);
         ReadConfigurator configurator = ReadConfiguratorFactory.getOne(false);
+        JsonNode deletedNode = null;
+        if(isHardDeleteEnabled) {
+            deletedNode = readEntity(userId, entityName, entityId, false, null, false);
+        }
         Vertex vertex = registryService.deleteEntityById(shard, entityName, userId, recordId.getUuid());
-        VertexReader vertexReader = new VertexReader(shard.getDatabaseProvider(), vertex.graph(), configurator, uuidPropertyName, definitionsManager);
-        JsonNode deletedNode = JsonNodeFactory.instance.objectNode().set(entityName, vertexReader.constructObject(vertex));
+        if (!isHardDeleteEnabled) {
+            VertexReader vertexReader = new VertexReader(shard.getDatabaseProvider(), vertex.graph(), configurator, uuidPropertyName, definitionsManager);
+            deletedNode = JsonNodeFactory.instance.objectNode().set(entityName, vertexReader.constructObject(vertex));
+        }
         if(notificationEnabled) notificationHelper.sendNotification(deletedNode, DELETE);
         return vertex;
     }
