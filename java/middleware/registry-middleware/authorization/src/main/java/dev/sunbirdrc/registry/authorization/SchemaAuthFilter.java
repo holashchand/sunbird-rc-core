@@ -21,11 +21,16 @@ public class SchemaAuthFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws ServletException, IOException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         try {
+            String[] paths = request.getRequestURI().split("/");
+            String schemaName = "";
+            if (paths.length >= 3 && request.getRequestURI().startsWith("/api/v1/")) {
+                schemaName = paths[3];
+            }
             if (request.getRequestURI().contains(INVITE_URL_ENDPOINT) &&
-                    anonymousInviteSchemas.stream().anyMatch(request.getRequestURI()::contains)) {
+                    anonymousInviteSchemas.stream().anyMatch(schemaName::equals)) {
                 servletRequest.getRequestDispatcher(((HttpServletRequest) servletRequest).getServletPath()).forward(servletRequest, servletResponse);
                 return;
-            } else if (!request.getRequestURI().contains(INVITE_URL_ENDPOINT) && anonymousSchemas.stream().anyMatch(request.getRequestURI()::contains)) {
+            } else if (!request.getRequestURI().contains(INVITE_URL_ENDPOINT) && anonymousSchemas.stream().anyMatch(schemaName::equals)) {
                 servletRequest.getRequestDispatcher(((HttpServletRequest) servletRequest).getServletPath()).forward(servletRequest, servletResponse);
                 return;
             }
