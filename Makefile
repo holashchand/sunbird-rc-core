@@ -1,7 +1,7 @@
 #SOURCES = $(wildcard java/**/*.java)
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 SOURCES := $(call rwildcard,java/,*.java)
-RELEASE_VERSION = v0.0.14
+RELEASE_VERSION = v1.0.0
 IMAGES := ghcr.io/sunbird-rc/sunbird-rc-core ghcr.io/sunbird-rc/sunbird-rc-nginx ghcr.io/sunbird-rc/sunbird-rc-context-proxy-service \
 			ghcr.io/sunbird-rc/sunbird-rc-public-key-service ghcr.io/sunbird-rc/sunbird-rc-keycloak ghcr.io/sunbird-rc/sunbird-rc-certificate-api \
 			ghcr.io/sunbird-rc/sunbird-rc-certificate-signer ghcr.io/sunbird-rc/sunbird-rc-notification-service ghcr.io/sunbird-rc/sunbird-rc-claim-ms \
@@ -43,7 +43,7 @@ test: build
 	@docker-compose down
 	@rm -rf db-data-1 || echo "no permission to delete"
 	# test with kafka(async), events, notifications,
-	@docker-compose --env-file test_environments/test_with_asyncCreate_events_notifications.env up -d db clickhouse redis keycloak registry certificate-signer certificate-api kafka zookeeper notification-ms metrics
+	@docker-compose --env-file test_environments/test_with_asyncCreate_events_notifications.env up -d db es clickhouse redis keycloak registry certificate-signer certificate-api kafka zookeeper notification-ms metrics
 	@echo "Starting the test" && sh build/wait_for_port.sh 8080
 	@echo "Starting the test" && sh build/wait_for_port.sh 8081
 	@docker-compose ps

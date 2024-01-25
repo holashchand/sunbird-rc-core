@@ -340,7 +340,7 @@ public class ElasticServiceImpl implements IElasticService {
             }
             switch (operator) {
             case eq:
-                query = query.must(QueryBuilders.matchPhraseQuery(field, value));
+                query = query.must(QueryBuilders.matchPhraseQuery(String.format("%s.keyword", field), value));
                 break;
             case neq:
                 query = query.mustNot(QueryBuilders.matchPhraseQuery(field, value));
@@ -374,7 +374,7 @@ public class ElasticServiceImpl implements IElasticService {
                 query = query.must(QueryBuilders.matchPhrasePrefixQuery(field, value.toString()));
                 break;
             case endsWith:
-                query = query.must(QueryBuilders.wildcardQuery(field, "*" + value));
+                query = query.must(QueryBuilders.wildcardQuery(String.format("%s.keyword", field), "*" + value));
                 break;
             case notContains:
                 query = query.mustNot(QueryBuilders.matchPhraseQuery(field, value));

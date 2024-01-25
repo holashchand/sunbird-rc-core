@@ -7,7 +7,7 @@ Feature: Registry api tests
     * string notificationsUrl = "http://localhost:8765"
     * url registryUrl
     * def admin_token = ""
-    * def client_secret = 'a52c5f4a-89fd-40b9-aea2-3f711f14c889'
+    * def client_secret = '**********'
     * def sleep = function(millis){ java.lang.Thread.sleep(millis) }
   @envnot=fusionauth
   Scenario: health check
@@ -224,10 +224,28 @@ Feature: Registry api tests
     Then status 200
     And response.result.Teacher.transactionId.length > 0
     * sleep(7000)
+  # create entity for teacher
+    Given url registryUrl
+    And path 'api/v1/Teacher?mode=async'
+    * def teacherRequest = read('TeacherRequest2.json')
+    And request teacherRequest
+    When method post
+    Then status 200
+    And response.result.Teacher.transactionId.length > 0
+    * sleep(7000)
   # get teacher info
     Given url registryUrl
     And path 'api/v1/Teacher/search'
-    And request {"filters":{}}
+    And request {"filters":{ "name":  { "eq":  "abc" }}}
+    When method post
+    Then status 200
+    * print response
+    And response.length == 1
+    And response[0].contact == '#notpresent'
+  # get teacher info
+    Given url registryUrl
+    And path 'api/v1/Teacher/search'
+    And request {"filters":{ "name":  { "endsWith":  "abc" }}}
     When method post
     Then status 200
     * print response
@@ -243,7 +261,7 @@ Feature: Registry api tests
     * header Host = 'keycloak:8080'
     * form field grant_type = 'client_credentials'
     * form field client_id = 'admin-api'
-    * form field client_secret = 'a52c5f4a-89fd-40b9-aea2-3f711f14c889'
+    * form field client_secret = client_secret
     * method post
     * def sample = read('inviteFlow.json')
     Then status 200
@@ -699,7 +717,7 @@ Feature: Registry api tests
     And request read('TeacherUniqueRequest.json')
     When method post
     Then status 500
-    * match response.params.errmsg contains "java.lang.RuntimeException: org.postgresql.util.PSQLException: ERROR: duplicate key value violates unique constraint \"public_V_personal_details_email_sqlgIdx\"\n  Detail: Key (email)=(test@rc.com) already exists."
+    * match response.params.errmsg contains "java.lang.RuntimeException: org.postgresql.util.PSQLException: ERROR: duplicate key value violates unique constraint \"public_V_personal_details_email_sqlgIdx\"\n  Detail: Key (email)=(test2@rc.com) already exists."
     # create entity with different email, violates composite unique index
     Given url registryUrl
     And path 'api/v1/TeacherUnique/invite'
