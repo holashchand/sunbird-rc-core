@@ -174,7 +174,6 @@ public class RegistryEntityController extends AbstractController {
             responseParams.setStatus(Response.Status.SUCCESSFUL);
             watch.stop(tag);
             return new ResponseEntity<>(response, HttpStatus.OK);
-
         } catch (RecordNotFoundException e) {
             createSchemaNotFoundResponse(e.getMessage(), responseParams);
             response = new Response(Response.API_ID.DELETE, "ERROR", responseParams);
@@ -188,8 +187,11 @@ public class RegistryEntityController extends AbstractController {
         }
     }
 
-    @RequestMapping(value = "/api/v1/{entityName}/search", method = RequestMethod.POST)
-    public ResponseEntity<Object> searchEntity(@PathVariable String entityName, @RequestHeader HttpHeaders header, @RequestBody ObjectNode searchNode) {
+    @RequestMapping(value = "/api/v1/{entityName}/search", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<Object> searchEntity(@PathVariable String entityName,
+                                               HttpServletRequest request,
+                                               @RequestHeader HttpHeaders header, @RequestBody(required = false) ObjectNode searchNode,
+                                               @RequestParam(value = "search", required = false) String searchQueryString) {
 
         ResponseParams responseParams = new ResponseParams();
         Response response = new Response(Response.API_ID.SEARCH, "OK", responseParams);

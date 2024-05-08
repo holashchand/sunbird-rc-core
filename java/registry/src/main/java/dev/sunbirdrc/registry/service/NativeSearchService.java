@@ -81,6 +81,10 @@ public class NativeSearchService implements ISearchService {
 
 	@Override
 	public JsonNode search(JsonNode inputQueryNode) throws IOException {
+		return search(inputQueryNode, false);
+	}
+
+	public JsonNode search(JsonNode inputQueryNode, boolean skipRemoveNonPublicFields) throws IOException {
 
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
 		SearchQuery searchQuery = getSearchQuery(inputQueryNode, offset, limit);
@@ -120,7 +124,7 @@ public class NativeSearchService implements ISearchService {
 							String prefix = shard.getShardLabel() + RecordIdentifier.getSeparator();
 							JSONUtil.addPrefix((ObjectNode) shardResult, prefix, new ArrayList<>(Arrays.asList(uuidPropertyName)));
 						}
-						result = removeNonPublicFields(searchQuery, shardResult);
+						result = removeNonPublicFields(searchQuery, shardResult, skipRemoveNonPublicFields);
 						if (tx != null) {
 							transaction.add(tx.hashCode());
 						}
@@ -139,18 +143,17 @@ public class NativeSearchService implements ISearchService {
 				} catch (Exception e) {
 					logger.error("Exception while auditing: {}", ExceptionUtils.getStackTrace(e));
 				}
-
-		 	}
+			}
 		}
 
 		return buildResultNode(searchQuery, result);
 	}
 
-	private ArrayNode removeNonPublicFields(SearchQuery searchQuery, ObjectNode shardResult) throws Exception {
+	private ArrayNode removeNonPublicFields(SearchQuery searchQuery, ObjectNode shardResult, boolean skipRemoveNonPublicFields) throws Exception {
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
 		for(String entityType: searchQuery.getEntityTypes()) {
 			ArrayNode arrayNode = (ArrayNode) shardResult.get(entityType);
-			if (removeNonPublicFieldsForNativeSearch) {
+			if (removeNonPublicFieldsForNativeSearch && !skipRemoveNonPublicFields) {
 				for(JsonNode node : arrayNode) {
 					result.add(JSONUtil.removeNodesByPath(node, definitionsManager.getExcludingFieldsForEntity(entityType)));
 				}

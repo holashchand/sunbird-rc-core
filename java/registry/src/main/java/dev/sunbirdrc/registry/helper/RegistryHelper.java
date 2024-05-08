@@ -345,12 +345,22 @@ public class RegistryHelper {
      * @throws Exception
      */
     public JsonNode searchEntity(JsonNode inputJson) throws Exception {
-        return searchEntity(inputJson, searchService);
+        return searchEntity(inputJson, searchService, false);
     }
 
-    private JsonNode searchEntity(JsonNode inputJson, ISearchService service) throws Exception {
+    public JsonNode searchEntityFromDBWithPrivateFields(JsonNode inputJson) throws Exception {
+        return searchEntity(inputJson, nativeSearchService, true);
+    }
+
+    private JsonNode searchEntity(JsonNode inputJson, ISearchService service, boolean skipRemoveNonPublicFields) throws Exception {
         logger.debug("searchEntity starts");
-        JsonNode resultNode = service.search(inputJson);
+        JsonNode resultNode;
+        if(skipRemoveNonPublicFields && service instanceof NativeSearchService) {
+            resultNode = ((NativeSearchService) service).search(inputJson, true);
+        } else {
+            resultNode = service.search(inputJson);
+        }
+
         ViewTemplate viewTemplate = viewTemplateManager.getViewTemplate(inputJson);
         if (viewTemplate != null) {
             ViewTransformer vTransformer = new ViewTransformer();
@@ -814,6 +824,13 @@ public class RegistryHelper {
             watch.start("RegistryController.searchEntity");
             JsonNode result = searchEntity(payload);
             watch.stop("RegistryController.searchEntity");
+            if(result != null && result.get(entityName) != null && !result.get(entityName).isEmpty()) {
+                String uuid = result.get(entityName).get(0).get(uuidPropertyName).asText();
+                JsonNode user = readEntity(userId, entityName, uuid, true, null, false);
+                ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
+                arrayNode.add(user.get(entityName));
+                ((ObjectNode) result).set(entityName, arrayNode);
+            }
             return result;
         }
         throw new Exception("Forbidden");
@@ -895,7 +912,7 @@ public class RegistryHelper {
         if (!Strings.isEmpty(viewTemplateId)) {
             searchByOwnerQuery.put(VIEW_TEMPLATE_ID, viewTemplateId);
         }
-        return searchEntity(searchByOwnerQuery, nativeSearchService);
+        return searchEntityFromDBWithPrivateFields(searchByOwnerQuery);
     }
 
     public void authorizeInviteEntity(HttpServletRequest request, String entityName) throws Exception {
