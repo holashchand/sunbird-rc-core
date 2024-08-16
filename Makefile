@@ -1,21 +1,26 @@
 #SOURCES = $(wildcard java/**/*.java)
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 SOURCES := $(call rwildcard,java/,*.java)
+BUILD_VERSION := $$(git rev-parse --short HEAD)
 RELEASE_VERSION = v2.0.1
-IMAGES := ghcr.io/sunbird-rc/sunbird-rc-core ghcr.io/sunbird-rc/sunbird-rc-claim-ms \
-			ghcr.io/sunbird-rc/sunbird-rc-notification-service ghcr.io/sunbird-rc/sunbird-rc-metrics \
-			ghcr.io/sunbird-rc/id-gen-service ghcr.io/sunbird-rc/encryption-service \
-			ghcr.io/sunbird-rc/sunbird-rc-identity-service ghcr.io/sunbird-rc/sunbird-rc-credential-schema \
-			ghcr.io/sunbird-rc/sunbird-rc-credentials-service
-build: java/registry/target/registry.jar
+#PACKAGE_REPO = ghcr.io/sunbird-rc/
+PACKAGE_REPO = locanbabu/
+IMAGES := sunbird-rc-core sunbird-rc-claim-ms \
+			sunbird-rc-notification-service sunbird-rc-metrics \
+			id-gen-service encryption-service \
+			sunbird-rc-identity-service sunbird-rc-credential-schema \
+			sunbird-rc-credentials-service
+build-java: java/registry/target/registry.jar
 	echo ${SOURCES}
 	rm -rf java/claim/target/*.jar
-	cd target && rm -rf * && jar xvf ../java/registry/target/registry.jar && cp ../java/Dockerfile ./ && docker build -t ghcr.io/sunbird-rc/sunbird-rc-core .
+	cd target && rm -rf * && jar xvf ../java/registry/target/registry.jar && cp ../java/Dockerfile ./ && docker build -t local/sunbird-rc-core .
 	make -C java/claim
-	make -C services/notification-service docker
-	make -C services/metrics docker
 	make -C services/id-gen-service docker
 	make -C services/encryption-service docker
+build-go:
+	make -C services/notification-service docker
+	make -C services/metrics docker
+build-node:
 	make -C services/identity-service/ docker
 	make -C services/credential-schema docker
 	make -C services/credentials-service/ docker
@@ -26,7 +31,26 @@ java/registry/target/registry.jar: $(SOURCES)
 	sh configure-dependencies.sh
 	cd java && ./mvnw clean install
 
-test: build
+
+publish-builds:
+	@for image in $(IMAGES); \
+    	do \
+    	  if [ -n "$$(docker images -q local/$$image:latest)" ]; then \
+          	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          else \
+          	  echo "Skipping image local/$$image:latest -> does not exist locally"; \
+          fi \
+      	done
+
+pull-builds:
+	@for image in $(IMAGES); \
+    	do \
+    	  docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION) \
+      	done
+
+test:
 	@docker-compose -f docker-compose-v1.yml down
 	@sudo rm -rf db-data* es-data* || echo "no permission to delete"
 	# test with distributed definition manager and native search
@@ -59,9 +83,9 @@ release: test
 	for image in $(IMAGES); \
     	do \
     	  echo $$image; \
-    	  docker tag $$image:latest $$image:$(RELEASE_VERSION);\
-    	  docker push $$image:latest;\
-    	  docker push $$image:$(RELEASE_VERSION);\
+    	  docker tag $(PACKAGE_REPO)$$image:latest $$image:$(RELEASE_VERSION);\
+    	  docker push $(PACKAGE_REPO)$$image:latest;\
+    	  docker push $(PACKAGE_REPO)$$image:$(RELEASE_VERSION);\
       	done
 	@cd tools/cli/ && npm publish
 

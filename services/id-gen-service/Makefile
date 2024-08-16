@@ -1,4 +1,4 @@
-IMAGE_NAME=ghcr.io/sunbird-rc/id-gen-service
+IMAGE_NAME=local/id-gen-service
 
 build:
 	rm -rf ./target

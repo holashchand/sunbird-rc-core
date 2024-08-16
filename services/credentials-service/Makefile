@@ -1,4 +1,4 @@
-IMAGE:=ghcr.io/sunbird-rc/sunbird-rc-credentials-service
+IMAGE:=local/sunbird-rc-credentials-service
 .PHONY: docker publish test
 
 docker:

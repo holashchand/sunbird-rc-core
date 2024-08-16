@@ -1,4 +1,4 @@
-IMAGE:=ghcr.io/sunbird-rc/sunbird-rc-credential-schema
+IMAGE:=local/sunbird-rc-credential-schema
 
 .PHONY: docker publish test
 

@@ -42,7 +42,7 @@ services:
       timeout: 5s
       retries: 5
   registry:
-    image: ghcr.io/sunbird-rc/sunbird-rc-core:${RELEASE_VERSION}
+    image: locanbabu/sunbird-rc-core:${RELEASE_VERSION}
     volumes:
       - ./${SCHEMA_DIR-java/registry/src/main/resources/public/_schemas}:/home/sunbirdrc/config/public/_schemas
       - ./${VIEW_DIR-java/registry/src/main/resources/views}:/home/sunbirdrc/config/views/
@@ -155,7 +155,7 @@ services:
       db:
         condition: service_healthy
   claim-ms:
-    image: ghcr.io/sunbird-rc/sunbird-rc-claim-ms:${RELEASE_VERSION}
+    image: locanbabu/sunbird-rc-claim-ms:${RELEASE_VERSION}
     environment:
       - connectionInfo_uri=jdbc:postgresql://db:5432/registry
       - connectionInfo_username=postgres
@@ -223,7 +223,7 @@ services:
       timeout: 20s
       retries: 10
   notification-ms:
-    image: ghcr.io/sunbird-rc/sunbird-rc-notification-service:${RELEASE_VERSION}
+    image: locanbabu/sunbird-rc-notification-service:${RELEASE_VERSION}
     ports:
       - '8765:8765'
     healthcheck:
@@ -321,7 +321,7 @@ services:
       timeout: 10s
       retries: 10
   metrics:
-    image: ghcr.io/sunbird-rc/sunbird-rc-metrics
+    image: locanbabu/sunbird-rc-metrics
     environment:
       CLICK_HOUSE_URL: clickhouse:9000
       CLICKHOUSE_DATABASE: default
@@ -372,7 +372,7 @@ services:
         wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit
         1
   id-gen-service:
-    image: ghcr.io/sunbird-rc/id-gen-service:${RELEASE_VERSION}
+    image: locanbabu/id-gen-service:${RELEASE_VERSION}
     ports:
       - '8088:8088'
     environment:
@@ -385,7 +385,7 @@ services:
       db:
         condition: service_healthy
   encryption-service:
-    image: ghcr.io/sunbird-rc/encryption-service:${RELEASE_VERSION}
+    image: locanbabu/encryption-service:${RELEASE_VERSION}
     ports:
       - '8013:8013'
     environment:

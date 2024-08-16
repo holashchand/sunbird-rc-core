@@ -1,4 +1,4 @@
-IMAGE_NAME=ghcr.io/sunbird-rc/encryption-service
+IMAGE_NAME=local/encryption-service
 
 build:
 	rm -rf ./target
