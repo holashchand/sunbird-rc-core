@@ -9,26 +9,6 @@ on:
   pull_request:
     branches: [ main-test ]
   workflow_dispatch:
-    inputs:
-      booleanInput:
-        description: 'Boolean input'
-        required: true
-        type: boolean
-      integerInput:
-        description: 'Integer input'
-        required: true
-        type: number
-      stringInput:
-        description: 'String input'
-        required: true
-      choiceInput:
-        description: 'Choice input'
-        required: true
-        type: choice
-        options:
-          - option1
-          - option2
-          - option3
 
 jobs:
   build:
@@ -81,10 +61,9 @@ jobs:
 #        limit-access-to-actor: true
     - name: Build and test
       env:
-        BUILD_SERVICES: ${{ github.event.inputs.choiceInput }}
         MAVEN_CACHE: ${{ steps.maven-cache.outputs.cache-hit }}
         DOCKER_CACHE: ${{ steps.docker-cache.outputs.cache-hit }}
-      run: make test-build
+      run: make test
     - name: Check space after tests
       run: |
         df -h
