@@ -97,7 +97,17 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/docker-layer-cache
+          key: ${{ runner.os }}-docker-cache-node
+          restore-keys: |
+            ${{ runner.os }}-docker-cache-node
       - name: Build Node Services
+        env:
+          CACHE_SRC: type=local,src=/tmp/docker-layer-cache
+          CACHE_DST: type=local,dest=/tmp/docker-layer-cache
         run: make build-node
       - name: Publish build artifacts
         run: make publish-builds
