@@ -38,7 +38,7 @@ publish-builds:
     	  if [ -n "$$(docker images -q local/$$image:latest)" ]; then \
           	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
           	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-          	  #docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
           else \
           	  echo "Skipping image local/$$image:latest -> does not exist locally"; \
           fi \
@@ -48,7 +48,8 @@ pull-builds:
 	@for image in $(IMAGES); \
     	do \
     	  echo pull: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-    	  #docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION) \
+    	  docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+    	  docker tag $(PACKAGE_REPO)$$image:$(BUILD_VERSION) $(PACKAGE_REPO)$$image:latest; \
       	done
 
 test:

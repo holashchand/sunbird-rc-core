@@ -409,7 +409,7 @@ services:
       timeout: 10s
       retries: 10
   metrics:
-    image: locanbabu/sunbird-rc-metrics
+    image: locanbabu/sunbird-rc-metrics:${RELEASE_VERSION}
     environment:
       CLICK_HOUSE_URL: clickhouse:9000
       CLICKHOUSE_DATABASE: default
