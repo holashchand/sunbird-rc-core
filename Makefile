@@ -11,20 +11,23 @@ build: java/registry/target/registry.jar
 	echo ${SOURCES}
 	rm -rf java/claim/target/*.jar
 	cd target && rm -rf * && jar xvf ../java/registry/target/registry.jar && cp ../java/Dockerfile ./ && docker build -t ghcr.io/sunbird-rc/sunbird-rc-core .
-	make -C java/claim
-	make -C services/notification-service docker
-	make -C services/metrics docker
-	make -C services/id-gen-service docker
-	make -C services/encryption-service docker
-	make -C services/identity-service/ docker
-	make -C services/credential-schema docker
-	make -C services/credentials-service/ docker
+#	make -C java/claim
+#	make -C services/notification-service docker
+#	make -C services/metrics docker
+#	make -C services/id-gen-service docker
+#	make -C services/encryption-service docker
+#	make -C services/identity-service/ docker
+#	make -C services/credential-schema docker
+#	make -C services/credentials-service/ docker
 
 
 java/registry/target/registry.jar: $(SOURCES)
 	echo $(SOURCES)
 	sh configure-dependencies.sh
 	cd java && ./mvnw clean install
+
+test-build: build
+	@echo BUILD SERVICE: $BUILD_SERVICES
 
 test: build
 	@docker-compose -f docker-compose-v1.yml down
