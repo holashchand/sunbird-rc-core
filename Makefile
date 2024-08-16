@@ -38,7 +38,7 @@ publish-builds:
     	  if [ -n "$$(docker images -q local/$$image:latest)" ]; then \
           	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
           	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          	  #docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
           else \
           	  echo "Skipping image local/$$image:latest -> does not exist locally"; \
           fi \
@@ -47,7 +47,8 @@ publish-builds:
 pull-builds:
 	@for image in $(IMAGES); \
     	do \
-    	  docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION) \
+    	  echo pull: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+    	  #docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION) \
       	done
 
 test:
@@ -91,3 +92,6 @@ release: test
 
 compose-init:
 	bash setup_vault.sh docker-compose.yml vault
+
+check-build-version:
+	@echo $(BUILD_VERSION)
