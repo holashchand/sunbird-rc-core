@@ -52,7 +52,7 @@ pull-builds:
     	  docker tag $(PACKAGE_REPO)$$image:$(BUILD_VERSION) $(PACKAGE_REPO)$$image:latest; \
       	done
 
-test:
+test-node-1:
 	@docker-compose -f docker-compose-v1.yml down
 	@sudo rm -rf db-data* es-data* || echo "no permission to delete"
 	# test with distributed definition manager and native search
@@ -64,6 +64,8 @@ test:
 	@cd java/apitest && ../mvnw -Pe2e test
 	@docker-compose -f docker-compose-v1.yml down
 	@sudo rm -rf db-data-1 || echo "no permission to delete"
+
+test-node-2:
 	# test with kafka(async), events, notifications,
 	@docker-compose -f docker-compose-v1.yml --env-file test_environments/test_with_asyncCreate_events_notifications.env up -d db es clickhouse redis keycloak registry certificate-signer certificate-api kafka zookeeper notification-ms metrics
 	@echo "Starting the test" && sh build/wait_for_port.sh 8080
