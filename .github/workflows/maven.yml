@@ -108,6 +108,10 @@ jobs:
           docker system df
 
   test-builds-2:
+    needs:
+      - build-java
+      - build-go
+      - build-node
     strategy:
       matrix:
         include:
