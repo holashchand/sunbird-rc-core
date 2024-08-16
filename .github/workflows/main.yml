@@ -15,3 +15,8 @@ jobs:
         run: |
           echo "Docker cache directory: $DOCKER_BUILDKIT_CACHE_DIR"
           echo "Buildx cache directory: $BUILDX_CACHE_DIR"
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          ## limits ssh access and adds the ssh public key for the user which triggered the workflow ie holashchand
+          limit-access-to-actor: true
