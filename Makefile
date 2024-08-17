@@ -1,7 +1,9 @@
 #SOURCES = $(wildcard java/**/*.java)
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 SOURCES := $(call rwildcard,java/,*.java)
-BUILD_VERSION := $$(git rev-parse --short HEAD)
+BUILD_TARGET := $(subst /,-, $(PLATFORM))
+BUILD_TARGET := $(strip $(BUILD_TARGET))
+BUILD_VERSION := $$(git rev-parse --short HEAD)-$(BUILD_TARGET)
 RELEASE_VERSION = v2.0.1
 #PACKAGE_REPO = ghcr.io/sunbird-rc/
 PACKAGE_REPO = locanbabu/
@@ -37,9 +39,9 @@ publish-builds:
 	@for image in $(IMAGES); \
     	do \
     	  if [ -n "$$(docker images -q local/$$image:latest)" ]; then \
-          	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
-          	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
-          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
+          	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$(BUILD_TARGET); \
           else \
           	  echo "Skipping image local/$$image:latest -> does not exist locally"; \
           fi \
@@ -48,9 +50,9 @@ publish-builds:
 pull-builds:
 	@for image in $(IMAGES); \
     	do \
-    	  echo pull: $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
-    	  docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
-    	  docker tag $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM $(PACKAGE_REPO)$$image:latest; \
+    	  echo pull: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+    	  docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+    	  docker tag $(PACKAGE_REPO)$$image:$(BUILD_VERSION) $(PACKAGE_REPO)$$image:latest; \
       	done
 
 test-node-1:
@@ -98,4 +100,5 @@ compose-init:
 	bash setup_vault.sh docker-compose.yml vault
 
 check-build-version:
-	@echo $(BUILD_VERSION)
+	@echo Build Version: $(BUILD_VERSION)
+	@echo Build Target: $(BUILD_TARGET)
