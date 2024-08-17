@@ -21,6 +21,8 @@ build-go:
 	make -C services/notification-service docker
 	make -C services/metrics docker
 build-node:
+	@echo cache source: $$CACHE_SRC
+	@echo cache dest: $$CACHE_DST
 	make -C services/identity-service/ docker
 	make -C services/credential-schema docker
 	make -C services/credentials-service/ docker

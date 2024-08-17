@@ -3,7 +3,7 @@ IMAGE:=local/sunbird-rc-identity-service
 .PHONY: docker publish test run unseal
 
 docker:
-	@docker build --cache-from=$CACHE_SRC --cache-to=$CACHE_DST -t $(IMAGE) .
+	@docker build --cache-from=$$CACHE_SRC --cache-to=$$CACHE_DST -t $(IMAGE) .
 publish:
 	@docker push $(IMAGE)
 test:
