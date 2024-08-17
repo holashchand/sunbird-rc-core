@@ -85,17 +85,15 @@ jobs:
   build-node:
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        platform: [linux/amd64]
         include:
-          - name: identity-service
-            os: ubuntu-latest
+          - os: ubuntu-latest
+            name: identity-service
             platform: linux/amd64
-          - name: credential-schema
-            os: ubuntu-latest
+          - os: ubuntu-latest
+            name: credential-schema
             platform: linux/amd64
-          - name: credentials-service
-            os: ubuntu-latest
+          - os: ubuntu-latest
+            name: credentials-service
             platform: linux/amd64
     runs-on: ${{ matrix.os }}
     steps:
