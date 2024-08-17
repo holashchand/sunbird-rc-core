@@ -12,8 +12,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
+      - name: debug mode
+        uses: ryanchapman/gha-ssh@v1
+        # after the container starts tmate in the background, it will
+        # sleep for 24 hours, so it's important that you set a timeout here
+        # so you don't run up your GitHub Actions bill
+        timeout-minutes: 60
         with:
-          ## limits ssh access and adds the ssh public key for the user which triggered the workflow ie holashchand
-          limit-access-to-actor: true
+            # authorized_github_users: required
+            # List of GitHub users who are allowed to ssh into container.
+            # On gha-ssh container start, it downloads the ssh public key(s) for each
+            # user from GitHub and places it in ~/authorized_keys
+            # tmate is started with `-a ~/authorized_keys` to only allow access
+            # to users with possession of the corresponding private ssh keys.
+          authorized_github_users: 'holashchand'
+          # debug: optional
+          # defaults to `false` if not set here
+          # if debug is set, then tmate is started with `-vvv -F`
+          debug: true
+#      - name: Setup upterm session
+#        uses: lhotari/action-upterm@v1
+#        with:
+#          ## limits ssh access and adds the ssh public key for the user which triggered the workflow ie holashchand
+#          limit-access-to-actor: true
