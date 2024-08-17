@@ -13,18 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        id: maven-cache
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('java/pom.xml','**/pom.xml', 'services/*/pom.xml', 'java/*/pom.xml', 'java/*/*/pom.xml', 'java/*/*/*/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-      - name: Print cache directory
         run: |
-          echo "Docker cache directory: $DOCKER_BUILDKIT_CACHE_DIR"
-          echo "Buildx cache directory: $BUILDX_CACHE_DIR"
-          echo "Buildx cache directory: $BUILD_VERSION"
+          echo '{ "features": { "containerd-snapshotter": true } }' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+          docker info -f '{{ .DriverStatus }}'
+          docker info
       # - name: Setup upterm session
       #   uses: lhotari/action-upterm@v1
       #   with:
