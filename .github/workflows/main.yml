@@ -12,24 +12,31 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: debug mode
-        uses: ryanchapman/gha-ssh@v1
-        # after the container starts tmate in the background, it will
-        # sleep for 24 hours, so it's important that you set a timeout here
-        # so you don't run up your GitHub Actions bill
-        timeout-minutes: 60
-        with:
-            # authorized_github_users: required
-            # List of GitHub users who are allowed to ssh into container.
-            # On gha-ssh container start, it downloads the ssh public key(s) for each
-            # user from GitHub and places it in ~/authorized_keys
-            # tmate is started with `-a ~/authorized_keys` to only allow access
-            # to users with possession of the corresponding private ssh keys.
-          authorized_github_users: 'holashchand'
-          # debug: optional
-          # defaults to `false` if not set here
-          # if debug is set, then tmate is started with `-vvv -F`
-          debug: true
+      - name: Install Tmate
+        run: |
+            brew install tmate
+
+      - name: Configure SSH Access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.USER_SSH_KEY }}" >> ~/.ssh/authorized_keys
+          chmod 600 ~/.ssh/authorized_keys
+          chmod 700 ~/.ssh
+
+      - name: Start Tmate Session
+        run: |
+          tmate -S /tmp/tmate.sock new-session -d
+          tmate -S /tmp/tmate.sock wait tmate-ready
+          tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}' > tmatesh
+          tmate -S /tmp/tmate.sock display -p '#{tmate_web}' > tmateweb
+          echo "SSH access: $(cat tmatesh)"
+          echo "Web access: $(cat tmateweb)"
+          sleep 1h  # Keeps the session open for 1 hour
+
+      - name: Stop Tmate Session
+        if: always()
+        run: |
+          tmate -S /tmp/tmate.sock kill-server
 #      - name: Setup upterm session
 #        uses: lhotari/action-upterm@v1
 #        with:
