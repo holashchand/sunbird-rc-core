@@ -13,7 +13,7 @@ IMAGES := sunbird-rc-core sunbird-rc-claim-ms \
 build-java: java/registry/target/registry.jar
 	echo ${SOURCES}
 	rm -rf java/claim/target/*.jar
-	cd target && rm -rf * && jar xvf ../java/registry/target/registry.jar && \
+	@cd target && rm -rf * && jar xvf ../java/registry/target/registry.jar && \
  		cp ../java/Dockerfile ./ && \
  		docker buildx build --platform=$$PLATFORM --cache-from=$$CACHE_SRC/registry --cache-to=$$CACHE_DST/registry -t local/sunbird-rc-core .
 	make -C java/claim
@@ -37,9 +37,9 @@ publish-builds:
 	@for image in $(IMAGES); \
     	do \
     	  if [ -n "$$(docker images -q local/$$image:latest)" ]; then \
-          	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-          	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
+          	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
+          	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
+          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
           else \
           	  echo "Skipping image local/$$image:latest -> does not exist locally"; \
           fi \
@@ -48,9 +48,9 @@ publish-builds:
 pull-builds:
 	@for image in $(IMAGES); \
     	do \
-    	  echo pull: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-    	  docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-    	  docker tag $(PACKAGE_REPO)$$image:$(BUILD_VERSION) $(PACKAGE_REPO)$$image:latest; \
+    	  echo pull: $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
+    	  docker pull $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM; \
+    	  docker tag $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$$PLATFORM $(PACKAGE_REPO)$$image:latest; \
       	done
 
 test-node-1:

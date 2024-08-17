@@ -26,6 +26,10 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux/amd64
+          - os: macos-14
+            platform: linux/arm64
+          - os: macos-13
+            platform: linux/arm/v7
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -83,6 +87,8 @@ jobs:
           MAVEN_CACHE: ${{ steps.maven-cache.outputs.cache-hit }}
         run: make build-java
       - name: Publish build artifacts
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: make publish-builds
       - name: Check space after tests
         run: |
@@ -159,6 +165,8 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: make -C services/${{ matrix.name }}/ docker
       - name: Publish build artifacts
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: make publish-builds
       - name: Check space after tests
         run: |
@@ -194,6 +202,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Pull docker builds
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: make pull-builds
       - name: Test builds - ${{ matrix.name }}
         run: make ${{ matrix.name }}
