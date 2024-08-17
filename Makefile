@@ -13,16 +13,15 @@ IMAGES := sunbird-rc-core sunbird-rc-claim-ms \
 build-java: java/registry/target/registry.jar
 	echo ${SOURCES}
 	rm -rf java/claim/target/*.jar
-	cd target && rm -rf * && jar xvf ../java/registry/target/registry.jar && cp ../java/Dockerfile ./ && docker build -t local/sunbird-rc-core .
+	cd target && rm -rf * && jar xvf ../java/registry/target/registry.jar && \
+ 		cp ../java/Dockerfile ./ && \
+ 		docker buildx build --platform=$$PLATFORM --cache-from=$$CACHE_SRC/registry --cache-to=$$CACHE_DST/registry -t local/sunbird-rc-core .
 	make -C java/claim
-	make -C services/id-gen-service docker
-	make -C services/encryption-service docker
-build-go:
-	make -C services/notification-service docker
-	make -C services/metrics docker
 build-node:
 	@echo cache source: $$CACHE_SRC
 	@echo cache dest: $$CACHE_DST
+	make -C services/id-gen-service docker
+	make -C services/encryption-service docker
 	make -C services/identity-service/ docker
 	make -C services/credential-schema docker
 	make -C services/credentials-service/ docker
@@ -85,7 +84,7 @@ clean:
 	@rm -rf target || true
 	@rm java/registry/target/registry.jar || true
 
-release: test
+release: test-node-1 test-node-2
 	for image in $(IMAGES); \
     	do \
     	  echo $$image; \

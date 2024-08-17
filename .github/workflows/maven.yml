@@ -12,7 +12,12 @@ on:
 
 jobs:
   build-java:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux/amd64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Check build version
@@ -25,6 +30,13 @@ jobs:
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /usr/local/.ghcup
           sudo rm -rf /usr/share/swift
+      - name: Setup containerd driver type
+        run: |
+          echo '{ "features": { "containerd-snapshotter": true } }' | sudo tee /etc/docker/daemon.json
+          export BUILDX_EXPERIMENTAL=1
+          sudo systemctl restart docker
+          docker info -f '{{ .DriverStatus }}'
+          docker info
       - name: Install Docker Compose
         run: |
           curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -38,7 +50,13 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('java/pom.xml','**/pom.xml', 'services/*/pom.xml', 'java/*/pom.xml', 'java/*/*/pom.xml', 'java/*/*/*/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/docker-layer-cache
+          key: ${{ runner.os }}-docker-cache-registry-claims
+          restore-keys: |
+            ${{ runner.os }}-docker-cache-registry-claims
       - name: Check space before tests
         run: df -h
       - name: Login to Docker Registry
@@ -50,6 +68,9 @@ jobs:
         run: sh configure-dependencies.sh
       - name: Build Java Services
         env:
+          CACHE_SRC: type=local,src=/tmp/docker-layer-cache
+          CACHE_DST: type=local,dest=/tmp/docker-layer-cache
+          PLATFORM: ${{ matrix.platform }}
           MAVEN_CACHE: ${{ steps.maven-cache.outputs.cache-hit }}
         run: make build-java
       - name: Publish build artifacts
@@ -62,6 +83,14 @@ jobs:
     strategy:
       matrix:
         include:
+          - os: ubuntu-latest
+            name: encryption-service
+            platform: linux/amd64
+            type: maven
+          - os: ubuntu-latest
+            name: id-gen-service
+            platform: linux/amd64
+            type: maven
           - os: ubuntu-latest
             name: notification-service
             platform: linux/amd64
@@ -98,6 +127,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Cache Maven dependencies
+        if: matrix.type == 'maven'
+        uses: actions/cache@v4
+        id: maven-cache
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('java/pom.xml','**/pom.xml', 'services/*/pom.xml', 'java/*/pom.xml', 'java/*/*/pom.xml', 'java/*/*/*/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
