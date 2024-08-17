@@ -5,6 +5,15 @@ name: Java CI with Maven
 
 on:
   workflow_dispatch:
+    inputs:
+      run-tests:
+        description: 'Should run tests?'
+        required: true
+        default: 'Yes'
+        type: choice
+        options:
+          - Yes
+          - No
   push:
     branches: [ main-test ]
   pull_request:
@@ -158,6 +167,7 @@ jobs:
           docker system df
 
   test-builds-2:
+    if: github.event.inputs['run-tests'] == 'Yes'
     needs:
       - build-java
       - build-services
