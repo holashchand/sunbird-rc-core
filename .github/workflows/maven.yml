@@ -44,6 +44,7 @@ jobs:
           sudo rm -rf /usr/local/.ghcup
           sudo rm -rf /usr/share/swift
       - name: Setup containerd driver type
+        if: matrix.platform == 'linux/amd64'
         run: |
           echo '{ "features": { "containerd-snapshotter": true } }' | sudo tee /etc/docker/daemon.json
           export BUILDX_EXPERIMENTAL=1

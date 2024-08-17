@@ -41,7 +41,7 @@ publish-builds:
     	  if [ -n "$$(docker images -q local/$$image:latest)" ]; then \
           	  docker tag local/$$image:latest $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
           	  echo publish: $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
-          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION)-$(BUILD_TARGET); \
+          	  docker push $(PACKAGE_REPO)$$image:$(BUILD_VERSION); \
           else \
           	  echo "Skipping image local/$$image:latest -> does not exist locally"; \
           fi \

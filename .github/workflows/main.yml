@@ -6,20 +6,14 @@ on:
 
 jobs:
   print-cache-directory:
-    runs-on: ubuntu-latest
+    runs-on: macos-13
     env:
       BUILD_VERSION: $(git rev-parse --short HEAD)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Cache Maven dependencies
-        run: |
-          echo '{ "features": { "containerd-snapshotter": true } }' | sudo tee /etc/docker/daemon.json
-          sudo systemctl restart docker
-          docker info -f '{{ .DriverStatus }}'
-          docker info
-      # - name: Setup upterm session
-      #   uses: lhotari/action-upterm@v1
-      #   with:
-      #     ## limits ssh access and adds the ssh public key for the user which triggered the workflow ie holashchand
-      #     limit-access-to-actor: true
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          ## limits ssh access and adds the ssh public key for the user which triggered the workflow ie holashchand
+          limit-access-to-actor: true
