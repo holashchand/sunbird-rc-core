@@ -31,7 +31,9 @@ jobs:
           tmate -S /tmp/tmate.sock display -p '#{tmate_web}' > tmateweb
           echo "SSH access: $(cat tmatesh)"
           echo "Web access: $(cat tmateweb)"
-          sleep 1h  # Keeps the session open for 1 hour
+          echo "Sleeping for 1 hour..."
+          sleep 3600
+          echo "Woke up after 1 hour."
 
       - name: Stop Tmate Session
         if: always()
