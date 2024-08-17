@@ -41,4 +41,4 @@ run: ./notification-service
 	./notification-service --scheme http --port 8765
 
 docker:
-	docker build -t local/sunbird-rc-notification-service .
+	docker buildx build --platform=$$PLATFORM --cache-from=$$CACHE_SRC --cache-to=$$CACHE_DST -t local/sunbird-rc-notification-service .

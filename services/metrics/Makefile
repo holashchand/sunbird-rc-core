@@ -27,6 +27,6 @@ build: metrics-server
 	@echo $(source)
 
 docker:
-	@docker build -t $(IMAGE) .
+	@docker buildx build --platform=$$PLATFORM --cache-from=$$CACHE_SRC --cache-to=$$CACHE_DST -t $(IMAGE) .
 publish:
 	@docker push $(IMAGE)

@@ -58,34 +58,16 @@ jobs:
         run: |
           df -h
           docker image ls
-  build-go:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Docker Compose
-        run: |
-          curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
-          docker system df
-      - name: Login to Docker Registry
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build Go Services
-        run: make build-go
-      - name: Publish build artifacts
-        run: make publish-builds
-      - name: Check space after tests
-        run: |
-          df -h
-          docker image ls
-          docker system df
-  build-node:
+  build-services:
     strategy:
       matrix:
         include:
+          - os: ubuntu-latest
+            name: notification-service
+            platform: linux/amd64
+          - os: ubuntu-latest
+            name: metrics
+            platform: linux/amd64
           - os: ubuntu-latest
             name: identity-service
             platform: linux/amd64
@@ -120,9 +102,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/docker-layer-cache
-          key: ${{ runner.os }}-docker-cache-node-${{ matrix.name }}
+          key: ${{ runner.os }}-docker-cache-${{ matrix.name }}
           restore-keys: |
-            ${{ runner.os }}-docker-cache-node-${{ matrix.name }}
+            ${{ runner.os }}-docker-cache-${{ matrix.name }}
       - name: Build Node Services
         env:
           CACHE_SRC: type=local,src=/tmp/docker-layer-cache
@@ -140,8 +122,7 @@ jobs:
   test-builds-2:
     needs:
       - build-java
-      - build-go
-      - build-node
+      - build-services
     strategy:
       matrix:
         include:
