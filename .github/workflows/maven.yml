@@ -83,12 +83,27 @@ jobs:
           docker image ls
           docker system df
   build-node:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        platform: [linux/amd64]
+        include:
+          - name: identity-service
+            os: ubuntu-latest
+            platform: linux/amd64
+          - name: credential-schema
+            os: ubuntu-latest
+            platform: linux/amd64
+          - name: credentials-service
+            os: ubuntu-latest
+            platform: linux/amd64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup containerd driver type
         run: |
           echo '{ "features": { "containerd-snapshotter": true } }' | sudo tee /etc/docker/daemon.json
+          export BUILDX_EXPERIMENTAL=1
           sudo systemctl restart docker
           docker info -f '{{ .DriverStatus }}'
           docker info
@@ -107,14 +122,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/docker-layer-cache
-          key: ${{ runner.os }}-docker-cache-node
+          key: ${{ runner.os }}-docker-cache-node-${{ matrix.name }}
           restore-keys: |
-            ${{ runner.os }}-docker-cache-node
+            ${{ runner.os }}-docker-cache-node-${{ matrix.name }}
       - name: Build Node Services
         env:
           CACHE_SRC: type=local,src=/tmp/docker-layer-cache
           CACHE_DST: type=local,dest=/tmp/docker-layer-cache
-        run: make build-node
+          PLATFORM: ${{ matrix.platform }}
+        run: make -C services/${{ matrix.name }}/ docker
       - name: Publish build artifacts
         run: make publish-builds
       - name: Check space after tests

@@ -2,7 +2,7 @@ IMAGE:=local/sunbird-rc-credentials-service
 .PHONY: docker publish test
 
 docker:
-	@docker build --cache-from=$$CACHE_SRC --cache-to=$$CACHE_DST -t $(IMAGE) .
+	@docker buildx build --platform=$$PLATFORM --cache-from=$$CACHE_SRC --cache-to=$$CACHE_DST -t $(IMAGE) .
 publish:
 	@docker push $(IMAGE)
 test:
